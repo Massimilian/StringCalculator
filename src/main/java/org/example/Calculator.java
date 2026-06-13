@@ -61,13 +61,111 @@ public class Calculator {
             counting.add(sb.toString());
         }
         deleteZeroActions();
+        deleteEmptyBrackets();
         deleteStartedClosingBrackets();
         checkLonelyBrackets();
         deleteZeros();
         minusNumbers();
         checkCounting();
         prepareBracketMultiply();
+        checkIntoBracketsValues();
         countZeroDividing();
+        finalCheckArounds(List.of(symbols.get(0), symbols.get(1), symbols.get(2), symbols.get(3)));
+
+    }
+
+
+    /**
+     * Check that every symbol of counting surround by a number
+     */
+    private void finalCheckArounds(List<Character> es) {
+        boolean result = finalCheckSymbolsArounds(es);
+        if (result) {
+            result = finalCheckNumbersArounds();
+        }
+        if (!result) {
+            status = " Impossible operation - cannot understand what do you want...";
+        }
+    }
+
+    private boolean finalCheckNumbersArounds() {
+        boolean result = true;
+        for (int i = 1; i < counting.size() - 1; i++) {
+            if (Character.isDigit(counting.get(i).charAt(0))) {
+                result = !Character.isDigit(counting.get(i - 1).charAt(0)) &&
+                        !Character.isDigit(counting.get(i + 1).charAt(0));
+            }
+            if (!result) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    private boolean finalCheckSymbolsArounds(List<Character> es) {
+        boolean corrector = true;
+        for (int i = 1; i < counting.size() - 1; i++) {
+            if (es.contains(counting.get(i).charAt(0)) && counting.get(i).length() == 1) {
+                corrector = (this.isNumber(counting.get(i - 1)) || this.isBracket(counting.get(i - 1))) &&
+                        (this.isNumber(counting.get(i + 1)) || this.isBracket(counting.get(i + 1)));
+            }
+            if (!corrector) {
+                break;
+            }
+        }
+        return corrector;
+    }
+
+    /**
+     * Method to check that the incoming String is a bracket
+     * @param test
+     * @return bracket or not
+     */
+
+    private boolean isBracket(String test) {
+        return test.equals(String.valueOf(symbols.get(4))) || test.equals(String.valueOf(symbols.get(5)));
+    }
+
+    /**
+     * Method to check that the incoming String is a number
+     * @param test
+     * @return number or not
+     */
+    private boolean isNumber(String test) {
+        boolean isNumb = true;
+        for (int i = 0; i < test.length(); i++) {
+            isNumb = Character.isDigit(test.charAt(i)) || test.charAt(i) == '-';
+            if (!isNumb) {
+                break;
+            }
+        }
+        return isNumb;
+    }
+
+    /**
+     * Method for check that into brackets there are correct values
+     */
+    private void checkIntoBracketsValues() {
+        for (int i = 1; i < counting.size(); i++) {
+            if (i < counting.size() - 1 && counting.get(i).charAt(0) == symbols.get(4) &&
+                    symbols.contains(counting.get(i + 1).charAt(0)) && !this.isBracket(counting.get(i - 1))) {
+                    counting.add(i + 1, "0");
+            }
+            if (counting.get(i).charAt(0) == symbols.get(5)&&
+                    symbols.contains(counting.get(i - 1).charAt(0)) && !this.isBracket(counting.get(i - 1))) {
+                counting.remove(i - 1);
+            }
+        }
+    }
+
+    private void deleteEmptyBrackets() {
+        for (int i = 0; i < counting.size() - 2; i++) {
+            if (counting.get(i).charAt(0) == symbols.get(4) && counting.get(i + 1).charAt(0) == symbols.get(5)) {
+                counting.remove(i);
+                counting.remove(i + 1);
+                i--;
+            }
+        }
     }
 
     /**
@@ -77,7 +175,9 @@ public class Calculator {
         for (int i = 0; i < counting.size(); i++) {
             if (counting.get(i).charAt(0) == symbols.get(5)) {
                 counting.remove(i);
-                i--;
+                if (i > 0) {
+                    i--;
+                }
             }
             if (counting.get(i).charAt(0) == symbols.get(4)) {
                 break;
@@ -143,13 +243,14 @@ public class Calculator {
     }
 
     /**
-     * Deletes actions from start and end of the array
+     * Deletes actions from start and end of the array (except brackets)
      */
     private void deleteZeroActions() {
-        while (symbols.contains(counting.get(0).charAt(0)) && counting.get(0).length() == 1) {
+        while (symbols.contains(counting.get(0).charAt(0)) && counting.get(0).length() == 1 &&
+                counting.get(0).charAt(0) != symbols.get(4)) {
             counting.remove(0);
         }
-        while (symbols.contains(counting.get(counting.size() - 1).charAt(0)) && counting.get(0).length() == 1) {
+        while (symbols.contains(counting.get(counting.size() - 1).charAt(0)) && counting.get(counting.size() - 1).length() == 1 && counting.get(counting.size() - 1).charAt(0) != symbols.get(5)) {
             counting.remove(counting.size() - 1);
         }
     }
@@ -161,8 +262,7 @@ public class Calculator {
         for (int i = 0; i < counting.size() - 1; i++) {
             if (counting.get(i).length() == 1 && counting.get(i + 1).length() == 1) {
                 if (symbols.contains(counting.get(i).charAt(0)) && symbols.contains(counting.get(i + 1).charAt(0))
-                        && counting.get(i).charAt(0) != symbols.get(5) && counting.get(i + 1).charAt(0) != symbols.get(5)
-                        && counting.get(i).charAt(0) != symbols.get(4) && counting.get(i + 1).charAt(0) != symbols.get(4)) {
+                        && this.isBracket(counting.get(i)) && this.isBracket(counting.get(i + 1))) {
                     counting.remove(i--);
                 }
             }
@@ -279,10 +379,15 @@ public class Calculator {
             }
         }
         if (balanceBrackets > 0) {
-            status = " Implosible operation! There are opened and not closed brackets.";
+            for (int i = 0; i < balanceBrackets; i++) {
+                counting.add(String.valueOf(symbols.get(5)));
+            }
         }
         if (balanceBrackets < 0) {
-            status = " Impossible operation! Something is going wrong with closing brackets.";
+            for (int i = 0; i >balanceBrackets ; i--) {
+                counting.add(0, String.valueOf(symbols.get(4)));
+
+            }
         }
     }
 
@@ -302,7 +407,7 @@ public class Calculator {
         if (count.endsWith(".")) {
             count = count.substring(0, count.length() - 1);
         }
-        if (count.startsWith("0") && count.charAt(1) != '.') {
+        if (count.startsWith("0") && count.length() > 1 && count.charAt(1) != '.') {
             count = "0";
         }
         return count;
@@ -316,7 +421,7 @@ public class Calculator {
      */
     public String count(List<String> toCount) {
         this.countZeroDividing();
-        if (toCount.size() < 3) {
+        if (toCount.size() < 3 && toCount.size() != 1) {
             this.status = " Impossible operation! Cannot make this action.";
         }
         if (this.status.isEmpty()) {
@@ -373,7 +478,7 @@ public class Calculator {
         } else if (act == 2) {
             first = first.multiply(second);
         } else if (act == 3) {
-            first = first.divide(second, 100, RoundingMode.HALF_UP);
+            first = first.intValue() == 0? BigDecimal.ZERO : first.divide(second, 100, RoundingMode.HALF_UP);
         }
         return first.toString();
     }
